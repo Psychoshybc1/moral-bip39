@@ -1,12 +1,32 @@
 import hashlib
 import sys
+import os
+import time
+from picamera import PiCamera
+from py_essentials import hashing
 
 #---------------------------------------
-# Input random stuff with enough entropy
+# Get Entropy from the Raspi Camera 
+# and dices
 #---------------------------------------
 
-long_random_string = "totally random stuff like 100 dice rolls or 256 coin flips"
-serial_number = "1"
+camera = PiCamera()
+
+#---------------------------------------
+# Take a Picture with the Camera
+# the rush noise alone will produce 
+# enough Entropy.
+#---------------------------------------
+
+print("Taking picture...")
+time.sleep(5)
+camera.capture("image.jpg")
+ImageHash = hashing.fileChecksum("image.jpg", "sha256")
+os.system("shred -vu image.jpg")
+
+DiceResult = input("Please put in your diced results here: (recommended are 128 rolls): ")
+
+long_random_string = f"{ImageHash}{DiceResult}"
 
 #------------------------------------
 # Sanity check
@@ -22,10 +42,8 @@ print("------------------------------------------------------------------------"
 print("Use this tool at your own risk. Abandon all hope ye who enter here. Etc.")
 print("------------------------------------------------------------------------\n\n")
 
-preimg = (serial_number + long_random_string).encode('utf-8')
+preimg = (long_random_string).encode('utf-8')
 print(f"Input = {preimg}")
-
-print("WARNING: Serial number has been moved to the front, so if you sent funds to an old version of this tool I hope you kept your passphrase somewhere because the current version of this tool won't create the same passphrase. You can check out an older commit to get the old passphrase back.")
 
 entropy = hashlib.sha256(preimg).hexdigest()
 print ("Input Hash = " + entropy)
@@ -2131,3 +2149,5 @@ for value in chunks:
     mnemonic.append(wordList[int(value, 2)])
 
 print("\nBIP39 Seed Phrase:\n\n" + " ".join(mnemonic))
+
+print("\nYou can now import the Mnemonic into a wallet like Electrum to get Adresses and the Master keys.\nThis should be done offline or using this tool would be pointless.\nIt is recommended to use a offline Cold storage in combination with a watch-only Wallet.")
